@@ -7,6 +7,29 @@
 #include "config.hpp"
 #include "../../policy/game_history.hpp"
 
+/*============================================================
+ * State implementation notes
+ *
+ * evaluate() combines material (KP-style piece values), a
+ * piece-square table for positional bonuses, king tropism
+ * (closeness of attackers to the enemy king), and a mobility
+ * term (own legal move count minus the opponent's).
+ *
+ * Two bugs were found and fixed in this file during testing:
+ *  1. The mobility term used to call create_null_state() to
+ *     count the opponent's moves, which heap-allocated a full
+ *     State on every evaluate() call and, more importantly,
+ *     mis-counted mobility as 1 whenever the opponent could
+ *     capture our king (the move generator returns early in
+ *     that case). Replaced with a direct, allocation-free
+ *     popcount over the same bitboard tables.
+ *  2. decode_board() used to reset the board via `Board{}`,
+ *     but Board's default constructor is the *starting*
+ *     position, not an empty board -- so '.' characters in an
+ *     encoded board string never actually cleared a square.
+ *     Fixed by explicitly zeroing every square first.
+ *============================================================*/
+
 
 /*============================================================
  * KP (King-Piece) Evaluation tables
